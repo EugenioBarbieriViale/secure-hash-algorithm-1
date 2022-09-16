@@ -1,1 +1,1 @@
-# Secure Hashing Algorithms (SHA)
+# Secure Hash Algorithms (SHA)
