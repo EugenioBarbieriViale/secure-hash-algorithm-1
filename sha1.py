@@ -81,7 +81,8 @@ def K(i):
         return "CA62C1D6"
 
 for i in range(80):
-    temp = left_shift(int(str_to_bin(A)), 5) + int(str_to_bin(f(i, B, C, D))) + int(str_to_bin(E)) + int(transform(i)) + int(str_to_bin(k(i)))
+    temp = str(left_shift(int(str_to_bin(A)), 5)) + str_to_bin(f(i, B, C, D)) + str_to_bin(E) + "".join(transform(arr_words)[i]) + str_to_bin(K(i))
+
     E = D
     D = C
     C = left_shift(B, [30])
