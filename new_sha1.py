@@ -5,68 +5,57 @@ class Hash:
     def __init__(self, msg):
         self.msg = msg
 
-    def str_to_bin(self, x):
-        return bin(int.from_bytes(str(x).encode(), "big")).replace("b","")
+    def to_bin(self, x):
+        if type(x) == int:
+            return format(x, "08b")
+        else:
+            return "".join(format(ord(i), '08b') for i in x)
 
-    def int_to_bin(self, x):
-        bin = []
-        while x >= 1:
-            bin.append(str(x%2))
-            x //= 2
-
-        return "0"*(8-len(bin)) + "".join(list(reversed(bin)))
-
-
-    def random_hex(self):
-        chars = ["1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"]
-        strs = []
-
-        for i in range(5):
-            str = []
-            for j in range(8):
-                index = randint(0,len(chars)-1)
-                str.append(chars[index])
-            strs.append("".join(str))
-
-        return strs
+    def rotate_left(self, x, n, w):
+        return ((x << n & (2 ** w - 1)) | (x >> w - n))
 
     def transform(self):
-        self.msg_bin = self.str_to_bin(self.msg)
+        self.msg_bin = self.to_bin(self.msg)
 
-        len_in_bin = self.int_to_bin(len(self.msg_bin))
-        padded = self.msg_bin + "1" + "0"*(447-len(self.msg_bin)) + "0"*(64-len(len_in_bin)) + len_in_bin
+        len_bin = self.to_bin(len(self.msg_bin))
+        padded = self.msg_bin + "1" + "0"*(447-len(self.msg_bin)) + "0"*(64-len(len_bin)) + len_bin
 
         self.padded_chunks = ["".join([padded[i] for i in range(j*32,(j+1)*32)]) for j in range(16)]
-        m = self.padded_chunks
 
         for i in range(len(self.padded_chunks)):
-            m[i] = "0"*48 + m[i]
+            self.padded_chunks[i] = "0"*48 + self.padded_chunks[i]
 
-        arr = []
-        for j in range(len(m)):
-            words = []
-            for i in range(80):
-                if i >= 16 and i <= 79:
-                    word_i = int(m[j][i-3])^int(m[j][i-8])^int(m[j][i-14])^int(m[j][i-16])
-                    words.append(word_i)
-            arr.append(words)
-        return arr
+        m = self.padded_chunks
+        h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0]
+        print(m)
 
-    def final(self):
-        A = self.random_hex()[0]
-        B = self.random_hex()[1]
-        C = self.random_hex()[2]
-        D = self.random_hex()[3]
-        E = self.random_hex()[4]
-
+        words = list()
         for i in range(80):
-            temp = str(left_shift(int(self.str_to_bin(A)), 5)) + self.str_to_bin(self.f(i, B, C, D)) + self.str_to_bin(E) + "".join(self.transform(self.padded_chunks)[i]) + self.str_to_bin(self.K(i))
+            if i < 15:
+                words.extend([int(m[(32*i) : (32*(i+1))], 2)])
+            else:
+                words.extend([rotate_left(words[i-3] ^ words[i-8] ^ words[i-14] ^ words[t-16], 1, 32)])
 
-            E = D
-            D = C
-            C = left_shift(B, [30])
-            B = A
-            A = temp
+        return words
+
+    # def final(self):
+    #     A = h[0]
+    #     B = h[1]
+    #     C = h[2]
+    #     D = h[3]
+    #     E = h[4]
+
+    #     for i in range(80):
+
+    #         temp = (A << 5) + self.f(i, B, C, D) + E + self.padded_chunks[i] + K(i)
+
+    #         E = D
+    #         D = C
+    #         C = str(left_shift(int(self.to_bin(B)), 30))
+    #         B = A
+    #         A = temp
+
+    #         print(temp)
 
     def f(self, i, B, C, D):
         if i <= 19:
@@ -81,23 +70,23 @@ class Hash:
         elif i >= 60 and i <= 79:
             return B ^ C ^ D
 
-    def K(self, i):
+     def K(self, i):
         if i <= 19:
-            return "5A827999"
+            return 0x5a827999 
         
         elif i >= 20 and i <= 39:
-            return "6ED9EBA1"
+            return 0x6ed9eba1
 
         elif i >= 40 and i <= 59:
-            return "8F1BBCDC"
+            return 0x8f1bbcdc
 
         elif i >= 60 and i <= 79:
-            return "CA62C1D6"
+            return 0xca62c1d6
 
     def run(self):
         self.transform()
-        self.final()
+        # self.final()
 
 
 obj = Hash("abc")
-print(obj.run())
+obj.run()

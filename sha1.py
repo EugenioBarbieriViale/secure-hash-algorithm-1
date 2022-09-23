@@ -1,90 +1,72 @@
-from random import randint
-from numpy import left_shift
-
 msg = "abc"
 
-def str_to_bin(x):
-    return bin(int.from_bytes(str(x).encode(), "big")).replace("b","")
+def to_bin(x):
+    if type(x) == int:
+        return format(x, "08b")
+    else:
+        return "".join(format(ord(i), '08b') for i in x)
 
-def int_to_bin(x):
-    bin = []
-    while x >= 1:
-        bin.append(str(x%2))
-        x //= 2
+def rotate_left(x, n, w):
+    return ((x << n & (2 ** w - 1)) | (x >> w - n))
 
-    return "0"*(8-len(bin)) + "".join(list(reversed(bin)))
-
-msg_bin = str_to_bin(msg)
-
-def random_hex():
-    chars = ["1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"]
-    strs = []
-
-    for i in range(5):
-        str = []
-        for j in range(8):
-            index = randint(0,len(chars)-1)
-            str.append(chars[index])
-        strs.append("".join(str))
-
-    return strs
-
-len_in_bin = int_to_bin(len(msg_bin))
-padded = msg_bin + "1" + "0"*(447-len(msg_bin)) + "0"*(64-len(len_in_bin)) + len_in_bin
-
-arr_words = ["".join([padded[i] for i in range(j*32,(j+1)*32)]) for j in range(16)]
-
-def transform(m):
-    for i in range(len(m)):
-        m[i] = "0"*48 + m[i]
-
-    arr = []
-    for j in range(len(m)):
-        words = []
-        for i in range(80):
-            if i >= 16 and i <= 79:
-                word_i = int(m[j][i-3])^int(m[j][i-8])^int(m[j][i-14])^int(m[j][i-16])
-                words.append(word_i)
-        arr.append(words)
-    return arr
-
-A = random_hex()[0]
-B = random_hex()[1]
-C = random_hex()[2]
-D = random_hex()[3]
-E = random_hex()[4]
-
-def f(i, B, C, D):
+def f(i, b, c, d):
     if i <= 19:
-        return (B and C) or ((not B) and D)
+        return (b and c) or ((not b) and d)
 
     elif i >= 20 and i <= 39:
-        return B ^ C ^ D
+        return b ^ c ^ d
 
     elif i >= 40 and i <= 59:
-        return (B and C) or (B and D) or (C and D)
+        return (b and c) or (b and d) or (c and d)
 
     elif i >= 60 and i <= 79:
-        return B ^ C ^ D
+        return b ^ c ^ d
 
-def K(i):
+
+def k(i):
     if i <= 19:
-        return "5A827999"
+        return 0x5a827999 
     
     elif i >= 20 and i <= 39:
-        return "6ED9EBA1"
+        return 0x6ed9eba1
 
     elif i >= 40 and i <= 59:
-        return "8F1BBCDC"
+        return 0x8f1bbcdc
 
     elif i >= 60 and i <= 79:
-        return "CA62C1D6"
+        return 0xca62c1d6
 
-for i in range(80):
-    temp = str(left_shift(int(str_to_bin(A)), 5)) + str_to_bin(f(i, B, C, D)) + str_to_bin(E) + "".join(transform(arr_words)[i]) + str_to_bin(K(i))
+msg_bin = to_bin(msg)
 
-    E = D
-    D = C
-    C = left_shift(B, [30])
-    B = A
-    A = temp
+len_bin = to_bin(len(msg_bin))
+padded = msg_bin + "1" + "0"*(447-len(msg_bin)) + "0"*(64-len(len_bin)) + len_bin
+
+padded_chunks = ["".join([padded[i] for i in range(j*32,(j+1)*32)]) for j in range(16)]
+
+for i in range(len(padded_chunks)):
+    padded_chunks[i] = "0"*48 + padded_chunks[i]
+
+m = padded_chunks
+h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0]
+
+n = 1
+for j in range(n):
+    words = list()
+    for i in range(80):
+        if i < 15:
+            words.extend([int(m[(32*i) : (32*(i+1))], 2)])
+        else:
+            words.extend([rotate_left(words[i-3] ^ words[i-8] ^ words[i-14] ^ words[t-16], 1, 32)])
+    a = h[0]
+    b = h[1]
+    c = h[2]
+    d = h[3]
+    e = h[4]
+
+    temp = rotate_left(a, 5, 32) + f(i, b, c, d) + e + k(i)
+
+    e = d
+    d = c
+    c = rotate_left(b, 30, 32)
+    b = a
+    a = temp
