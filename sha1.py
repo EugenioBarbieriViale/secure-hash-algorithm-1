@@ -1,4 +1,12 @@
-msg = input("Enter a message: ")
+from os.path import exists
+
+
+msg = input("Enter a message or give the path to a file: ")
+
+if exists(msg):
+    f = open(msg, "r")
+    s = str(f.read())
+    msg = s[:len(s)-1] + s[len(s):]
 
 def to_bin(x):
     if type(x) == int:
@@ -21,7 +29,6 @@ def f(i, b, c, d):
 
     else:
         return b ^ c ^ d
-
 
 def k(i):
     if i <= 19:
