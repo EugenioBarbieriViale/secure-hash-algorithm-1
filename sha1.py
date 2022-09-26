@@ -1,4 +1,4 @@
-msg = "abc"
+msg = input("Enter a message: ")
 
 def to_bin(x):
     if type(x) == int:
