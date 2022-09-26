@@ -45,10 +45,14 @@ def k(i):
 
 msg_bin = to_bin(msg)
 
-len_bin = to_bin(len(msg_bin))
-padded = msg_bin + "1" + "0"*(447-len(msg_bin)) + "0"*(64-len(len_bin)) + len_bin
+l = 512
+while l < len(msg_bin):
+    l += 512
 
-assert(len(padded) == 512)
+len_bin = to_bin(len(msg_bin))
+padded = msg_bin + "1" + "0"*(l-65-len(msg_bin)) + "0"*(64-len(len_bin)) + len_bin
+
+assert(len(padded) == l)
 
 m = padded
 h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0]
